@@ -7,15 +7,15 @@ const BookCard = ({ book }: { book: Book }) => {
   });
 
   return (
-    <div className="h-80 flex flex-col">
+    <div className="h-80 lg:h-96 flex flex-col">
       <img className="flex-grow object-cover" src={book.coverImg} alt="book image" />
       <div className="m-2 flex flex-col">
         <div className="flex-grow">
-          <h4 className="truncate">{book.title}</h4>
+          <h5 className="font-semibold truncate">{book.title}</h5>
         </div>
-        <div className="flex flex-row justify-between">
-          <h6>{`${book.discountRate}%`}</h6>
-          <h6 className='text-lg font-bold'>{`${currencyFormatter.format(book.price)}`}</h6>
+        <div className="flex flex-row justify-between items-baseline">
+          <h6 className='text-red-500 font-semibold'>{`${book.discountRate}%`}</h6>
+          <h4 className='text-lg font-bold'>{`${currencyFormatter.format(book.price)}`}</h4>
         </div>
       </div>
     </div>

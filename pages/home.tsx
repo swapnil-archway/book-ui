@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import BookCard from '@/components/bookCard';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 
 const HomePage = () => {
+  const listRef = useRef<HTMLDivElement>(null);
+
   const books: Book[] = [...Array(60)].map((_, index) => ({
     id: index,
     title: 'sample title',
@@ -12,10 +15,13 @@ const HomePage = () => {
     price: 200,
   }));
 
+  const isRefreshing: Boolean = usePullToRefresh(listRef);
+
   return (
     <div className="h-screen flex flex-col">
       <div className="m-4 text-xl text-center font-bold">Books</div>
-      <div className="flex-grow overflow-y-auto grid grid-cols-2 gap-1">
+      {isRefreshing && <div className="m-4 text-lg">Refreshing...</div>}
+      <div className="flex-grow overflow-y-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1" ref={listRef}>
         {books.map((book: Book, index) => {
           return <BookCard key={index} book={book} />;
         })}
