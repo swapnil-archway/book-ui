@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import BookCard from '@/components/bookCard';
-import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useRecoilState } from 'recoil';
 import { bookState } from '@/recoil/recoil';
 import { getBooks } from '@/api/api';
@@ -9,7 +8,6 @@ import { Loader } from '@/components/loader';
 import InfiniteScroll from 'react-infinite-scroll-component';
 
 const HomePage = () => {
-  const listRef = useRef<HTMLDivElement>(null);
   const [bookData, setBookData] = useRecoilState<BookList>(bookState);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errMessage, setErrMessage] = useState<string>('');
@@ -25,20 +23,6 @@ const HomePage = () => {
     } catch (error) {
       setErrMessage('Something went wrong.');
       throw error;
-    }
-  };
-
-  const refreshBooksData = async (): Promise<void> => {
-    try {
-      const bookResponse: BookResponse = await fetchBooks(1);
-      setBookData({
-        books: bookResponse.data,
-        currentPage: 1,
-        limit: 10,
-      });
-    } catch (error) {
-      console.error(error);
-      setBookData((prevData: BookList) => prevData);
     }
   };
 
@@ -73,19 +57,24 @@ const HomePage = () => {
     return () => {};
   }, [errMessage]);
 
-  const isRefreshing: boolean = usePullToRefresh(listRef, refreshBooksData);
 
   return (
     <div className="h-screen flex flex-col">
       <div className="m-4 text-xl text-center font-bold">Books</div>
-      <div className="flex-grow overflow-y-auto" ref={listRef}>
+      {/* <div className="flex-grow overflow-y-auto" ref={listRef}> */}
         <InfiniteScroll
-          dataLength={bookData?.books?.length || 0}
-          next={() => fetchBooks((bookData?.currentPage || 1) + 1)}
+          dataLength={bookData?.books?.length || 10}
+          next={() => loadBooksData((bookData?.currentPage || 1) + 1)}
           hasMore={(bookData?.books?.length ?? 0) < (bookData?.currentPage || 1) * pageSize}
           loader={isLoading && <Loader />}
-          endMessage={<h4>No more books to load.</h4>}>
-          {isRefreshing && <div className="m-4 text-lg">Refreshing...</div>}
+          endMessage={<h4>No more books to load.</h4>}
+          refreshFunction={() => loadBooksData(1)}
+          pullDownToRefresh
+          pullDownToRefreshThreshold={200}
+          pullDownToRefreshContent={
+            <Loader />
+          }
+        >
           {bookData && bookData.books.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1">
               {bookData &&
@@ -97,7 +86,7 @@ const HomePage = () => {
             <div className="text-center">No book found</div>
           )}
         </InfiniteScroll>
-      </div>
+      {/* </div> */}
 
       {errMessage && (
         <div className="fixed bottom-4 right-8 bg-red-500 text-white px-4 py-2 rounded-lg shadow-md">
