@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 export const usePullToRefresh = (ref: React.RefObject<HTMLDivElement>) => {
-  const [isRefreshing, setIsRefreshing] = useState<Boolean>(false);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
   useEffect(() => {
     const container = ref.current;
