@@ -4,32 +4,51 @@ import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useRecoilState } from 'recoil';
 import { bookState } from '@/recoil/recoil';
 import { getBooks } from '@/api/api';
-import { Book, BookResponse, ListMeta } from '@/models/book';
+import { Book, BookList, BookResponse, ListMeta } from '@/models/book';
 import { Loader } from '@/components/loader';
 import InfiniteScroll from 'react-infinite-scroll-component';
 
 const HomePage = () => {
   const listRef = useRef<HTMLDivElement>(null);
-  const [bookData, setBookData] = useRecoilState(bookState);
+  const [bookData, setBookData] = useRecoilState<BookList>(bookState);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [errMessage, setErrMessage] = useState<string>('');
   const pageSize = 10;
 
-  useEffect(() => {
-    fetchBooks();
-    return () => {
-      // Clean up when the component is unmounted
-    };
-  }, []);
+  const fetchBooks = async (page: number): Promise<BookResponse> => {
+    try {
+      const meta: ListMeta = { page, limit: 10 };
+      const bookResponse: BookResponse = await getBooks(meta);
+      setErrMessage('');
 
-  const fetchBooks = async (page = 1) => {
+      return bookResponse;
+    } catch (error) {
+      setErrMessage('Something went wrong.');
+      throw error;
+    }
+  };
+
+  const refreshBooksData = async (): Promise<void> => {
+    try {
+      const bookResponse: BookResponse = await fetchBooks(1);
+      setBookData({
+        books: bookResponse.data,
+        currentPage: 1,
+        limit: 10,
+      });
+    } catch (error) {
+      console.error(error);
+      setBookData((prevData: BookList) => prevData);
+    }
+  };
+
+  const loadBooksData = async (page: number = 1) => {
     try {
       setIsLoading(true);
-      const meta: ListMeta = { page, limit: 10 };
-      const { data }: BookResponse = await getBooks(meta);
-
-      setBookData((prevData) => ({
+      const bookResponse = await fetchBooks(page);
+      setBookData((prevData: BookList) => ({
         ...prevData,
-        books: prevData ? prevData.books.concat(data) : data,
+        books: prevData ? prevData.books.concat(bookResponse.data) : bookResponse.data,
         currentPage: page,
       }));
       setIsLoading(false);
@@ -39,29 +58,52 @@ const HomePage = () => {
     }
   };
 
-  const isRefreshing: Boolean = usePullToRefresh(listRef);
+  useEffect(() => {
+    loadBooksData();
+    return () => {};
+  }, []);
+
+  useEffect(() => {
+    if (errMessage) {
+      setTimeout(() => {
+        setErrMessage('');
+      }, 3000);
+    }
+
+    return () => {};
+  }, [errMessage]);
+
+  const isRefreshing: boolean = usePullToRefresh(listRef, refreshBooksData);
 
   return (
     <div className="h-screen flex flex-col">
-      <InfiniteScroll
-        dataLength={bookData?.books?.length || 0}
-        next={() => fetchBooks((bookData?.currentPage || 1) + 1)}
-        hasMore={(bookData?.books?.length ?? 0) < (bookData?.currentPage || 1) * pageSize}
-        loader={isLoading && <Loader />}
-        endMessage={<h4>No more books to load.</h4>}>
-        <div className="m-4 text-xl text-center font-bold">Books</div>
-        {isRefreshing && <div className="m-4 text-lg">Refreshing...</div>}
-        {bookData && bookData.books.length > 0 ? (
-          <div className="flex-grow overflow-y-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1" ref={listRef}>
-            {bookData &&
-              bookData.books?.map((book: Book, index) => {
-                return <BookCard key={index} book={book} />;
-              })}
-          </div>
-        ) : (
-          <div className="text-center">No book found</div>
-        )}
-      </InfiniteScroll>
+      <div className="m-4 text-xl text-center font-bold">Books</div>
+      <div className="flex-grow overflow-y-auto" ref={listRef}>
+        <InfiniteScroll
+          dataLength={bookData?.books?.length || 0}
+          next={() => fetchBooks((bookData?.currentPage || 1) + 1)}
+          hasMore={(bookData?.books?.length ?? 0) < (bookData?.currentPage || 1) * pageSize}
+          loader={isLoading && <Loader />}
+          endMessage={<h4>No more books to load.</h4>}>
+          {isRefreshing && <div className="m-4 text-lg">Refreshing...</div>}
+          {bookData && bookData.books.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1">
+              {bookData &&
+                bookData.books?.map((book: Book) => {
+                  return <BookCard key={book.id} book={book} />;
+                })}
+            </div>
+          ) : (
+            <div className="text-center">No book found</div>
+          )}
+        </InfiniteScroll>
+      </div>
+
+      {errMessage && (
+        <div className="fixed bottom-4 right-8 bg-red-500 text-white px-4 py-2 rounded-lg shadow-md">
+          <p className="text-sm">{errMessage}</p>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,17 +1,16 @@
 import React, { useEffect, useState } from 'react';
 
-export const usePullToRefresh = (ref: React.RefObject<HTMLDivElement>) => {
+export const usePullToRefresh = (ref: React.RefObject<HTMLDivElement>, ajaxFunction: () => Promise<void>) => {
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
   useEffect(() => {
     const container = ref.current;
 
-    const handlePullToRefresh = () => {
+    const handlePullToRefresh = async () => {
       if (container?.scrollTop === 0) {
         setIsRefreshing(true);
-        setTimeout(() => {
-          setIsRefreshing(false);
-        }, 1000);
+        await ajaxFunction();
+        setIsRefreshing(false);
       }
     };
 
