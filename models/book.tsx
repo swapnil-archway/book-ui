@@ -11,15 +11,16 @@ export interface BookList {
   books: Book[];
   currentPage: number;
   limit?: number;
+  total: number;
 }
 
 export interface ListMeta {
   page: number;
   limit: number;
-  total?: number;
 }
 
 export interface BookResponse extends ListMeta {
   data: Book[];
   lastPage: number;
+  total: number;
 }
