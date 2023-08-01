@@ -9,9 +9,11 @@ const BookCard = ({ book }: { book: Book }) => {
   };
 
   return (
-    <div className="h-80 lg:h-96 flex flex-col">
-      <img className="flex-grow object-cover" src={book.coverImg} alt="book image" onError={handleImageError} />
-      <div className="m-2 flex flex-col">
+    <div className="h-80 lg:h-96 ">
+      <div className="h-[80%]">
+        <img className="object-cover h-full w-full" src={book.coverImg} alt="book image" onError={handleImageError} />
+      </div>
+      <div className="p-2 flex flex-col h-[20%]">
         <div className="flex-grow">
           <h5 className="font-semibold truncate">{book.title}</h5>
         </div>
